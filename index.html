@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة الألغاز 3D</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #2b1055, #7597de, #0f0c29);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* ----- شاشة الإنترو ----- */
+        #intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #080711;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+
+        .intro-title {
+            font-size: 4.5rem;
+            color: #00f2fe;
+            text-shadow: 0 0 20px #00f2fe, 0 0 40px #4facfe;
+            opacity: 0;
+            transform: scale(0.3);
+            animation: zoomInGlow 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.3s;
+        }
+
+        .intro-subtitle {
+            font-size: 1.5rem;
+            color: #e0e0e0;
+            margin-top: 15px;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards 1.5s;
+        }
+
+        .intro-loader {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #00f2fe;
+            border-radius: 50%;
+            margin-top: 30px;
+            opacity: 0;
+            animation: spin 1s linear infinite, fadeIn 0.5s ease forwards 1.8s;
+        }
+
+        @keyframes zoomInGlow {
+            0% { opacity: 0; transform: scale(0.3); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* ----- التصميم العام للبطاقات (Glassmorphism + Glow) ----- */
+        .card {
+            background: rgba(20, 20, 35, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 25px;
+            padding: 30px 25px;
+            width: 90%;
+            max-width: 480px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            animation: cardAppear 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* صورة واجهة البداية */
+        .hero-img {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(0, 242, 254, 0.4);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(0, 242, 254, 0.6);
+            font-weight: 800;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            color: #d1d5db;
+        }
+
+        /* ----- أزرار 3D احترافية ----- */
+        .btn-3d {
+            position: relative;
+            display: block;
+            width: 100%;
+            padding: 16px 24px;
+            margin: 14px 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 8px 0 #0088cc, 0 15px 20px rgba(0, 0, 0, 0.4);
+            transition: all 0.1s ease;
+        }
+
+        .btn-3d:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 0 #0088cc, 0 18px 25px rgba(0, 242, 254, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .btn-3d:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #0088cc, 0 5px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-danger-3d {
+            background: linear-gradient(180deg, #ff416c 0%, #ff4b2b 100%);
+            box-shadow: 0 8px 0 #b31217, 0 15px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-danger-3d:hover {
+            box-shadow: 0 10px 0 #b31217, 0 18px 25px rgba(255, 65, 108, 0.4);
+        }
+
+        .btn-danger-3d:active {
+            box-shadow: 0 2px 0 #b31217, 0 5px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px;
+            margin: 15px 0;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.4);
+            color: #fff;
+            outline: none;
+            font-size: 1.1rem;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .input-field:focus {
+            border-color: #00f2fe;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.5);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .option-btn-3d {
+            background: linear-gradient(180deg, #3a3d52 0%, #2a2c3d 100%);
+            box-shadow: 0 6px 0 #181925, 0 10px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 16px;
+            font-size: 1.05rem;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.1s ease;
+        }
+
+        .option-btn-3d:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #181925, 0 12px 20px rgba(0, 242, 254, 0.2);
+            background: linear-gradient(180deg, #444863 0%, #32354a 100%);
+        }
+
+        .option-btn-3d:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #181925, 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* نظام الشات والمايك */
+        .room-controls {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            height: 120px;
+            overflow-y: auto;
+            padding: 10px;
+            text-align: right;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .chat-input-container input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+        }
+
+        .chat-input-container button {
+            width: auto;
+            padding: 8px 18px;
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .mic-btn-3d {
+            background: linear-gradient(180deg, #28a745 0%, #1e7e34 100%);
+            box-shadow: 0 4px 0 #124d20;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .mic-btn-3d.active {
+            background: linear-gradient(180deg, #dc3545 0%, #bd2130 100%);
+            box-shadow: 0 4px 0 #74141d;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        .hidden { display: none !important; }
+
+        .room-code {
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            color: #000;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- شاشة الأنيميشن (الانترو) -->
+    <div id="intro-screen">
+        <h1 class="intro-title">الألغاز</h1>
+        <p class="intro-subtitle">تحدَّ ذكاءك واختبر معلوماتك...</p>
+        <div class="intro-loader"></div>
+    </div>
+
+    <!-- الواجهة الرئيسية -->
+    <div id="main-menu" class="card hidden">
+        <!-- صورة غلاف جذابة عالية الجودة -->
+        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80" alt="غلاف اللعبة" class="hero-img">
+        <h1>الألغاز</h1>
+        <p>عالم التحدي والتفكير! اختبر مهاراتك مع باقة متجددة من الألغاز الشيقة.</p>
+        <button class="btn-3d" onclick="goToModeSelection()">ابدأ اللعب الآن 🚀</button>
+    </div>
+
+    <!-- واجهة اختيار نمط اللعب -->
+    <div id="mode-selection" class="card hidden">
+        <h2 style="font-size: 2rem; margin-bottom: 10px;">اختر نمط اللعب</h2>
+        <p style="margin-bottom: 15px; font-size: 0.95rem;">هل تريد اللعب بمفردك أم التحدي مع صديق؟</p>
+        <button class="btn-3d" onclick="startSinglePlayer()">لعب مفرد 👤</button>
+        <button class="btn-3d" onclick="showMultiplayerOptions()">اللعب مع صديق 👥</button>
+        <button class="btn-3d btn-danger-3d" onclick="showMainMenu()">رجوع ↩️</button>
+    </div>
+
+    <!-- واجهة خيارات اللعب الجماعي -->
+    <div id="multiplayer-options" class="card hidden">
+        <h2 style="font-size: 2rem; margin-bottom: 10px;">اللعب مع صديق</h2>
+        <p style="margin-bottom: 15px; font-size: 0.95rem;">أنشئ غرفة أو أدخل كود الغرفة للانضمام</p>
+        <button class="btn-3d" onclick="createRoom()">إنشاء غرفة جديدة ➕</button>
+        <hr style="margin: 20px 0; border-color: rgba(255,255,255,0.15);">
+        <input type="text" id="join-code-input" class="input-field" placeholder="أدخل كود الغرفة هنا...">
+        <button class="btn-3d" onclick="joinRoom()">انضمام للغرفة 🔗</button>
+        <button class="btn-3d btn-danger-3d" onclick="goToModeSelection()">رجوع ↩️</button>
+    </div>
+
+    <!-- واجهة اللعبة (الألغاز) -->
+    <div id="game-screen" class="card hidden">
+        <div id="room-info" class="hidden">
+            <span class="room-code">كود الغرفة: <span id="display-room-code">----</span></span>
+        </div>
+        
+        <h3 id="question-number" style="color: #00f2fe; margin-bottom: 10px; font-size: 1.4rem;">السؤال 1</h3>
+        <p id="question-text" style="font-size: 1.25rem; font-weight: 600; min-height: 60px; color: #fff;">نص اللغز سيظهر هنا...</p>
+
+        <div id="options-container" class="options-grid"></div>
+
+        <!-- أدوات التواصل للعب الجماعي -->
+        <div id="multiplayer-tools" class="hidden">
+            <div class="room-controls">
+                <span style="font-weight: bold;">المحادثة الصوتية:</span>
+                <button id="mic-toggle" class="mic-btn-3d" onclick="toggleMic()">تشغيل المايك 🎤</button>
+            </div>
+
+            <div class="chat-box" id="chat-box">
+                <div><i>النظام: تم دخول الغرفة بنجاح...</i></div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" placeholder="اكتب رسالة...">
+                <button class="btn-3d" style="width: auto; padding: 10px 15px; margin: 0; font-size: 0.9rem;" onclick="sendMessage()">إرسال</button>
+            </div>
+        </div>
+
+        <br>
+        <button class="btn-3d btn-danger-3d" style="margin-top: 15px;" onclick="exitGame()">خروج 🚪</button>
+    </div>
+
+    <script>
+        // تشغيل الأنيميشن عند فتح الصفحة
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const intro = document.getElementById('intro-screen');
+                intro.style.opacity = '0';
+                intro.style.visibility = 'hidden';
+                
+                setTimeout(() => {
+                    document.getElementById('main-menu').classList.remove('hidden');
+                }, 600);
+            }, 3000);
+        });
+
+        // بنك الألغاز
+        const allQuestions = [
+            { q: "ما هو الشيء الذي كلما أخذت منه كَبُر؟", options: ["الحفرة", "البحر", "العمر", "المال"], a: 0 },
+            { q: "شيء يتكلم جميع اللغات ولكنه لا يملك لساناً؟", options: ["الراديو", "الصدى", "الهاتف", "الكتاب"], a: 1 },
+            { q: "ما هو الشيء الذي يحمل طعامه ويمشي، وإذا أكل منه مات؟", options: ["الشمعة", "السيارة", "النار", "القلم"], a: 0 },
+            { q: "ما هو الشيء الذي يدور حول الحديقة دون أن يتحرك؟", options: ["الهواء", "السور", "الماء", "الشمس"], a: 1 },
+            { q: "ما هو الشيء الذي له أسنان ولا يعض؟", options: ["المشط", "المنشار", "الزيبرا", "الطفل"], a: 0 },
+            { q: "ما هو الشيء الذي يمكنه ملء الغرفة دون أن شغل مساحة؟", options: ["الدخان", "الضوء", "الماء", "الأثاث"], a: 1 },
+            { q: "شيء يسير بلا أرجل ولا يدخل إلا بالأذنين؟", options: ["الصوت", "الريح", "الماء", "الفكر"], a: 0 },
+            { q: "ما هو الشيء الذي يملك عيناً واحدة ولكنه لا يرى؟", options: ["الإبرة", "الإعصار", "الخرز", "الشمس"], a: 0 },
+            { q: "شيء نراه في السحاب ولا نراه في الماء؟", options: ["حرف السبت", "حرف السين", "النجم", "الظل"], a: 1 },
+            { q: "تاجر من التجار إذا قلعنا عينه طار؟", options: ["عطار", "صراف", "خياط", "خباز"], a: 0 },
+            { q: "ما هو الشيء الذي يسمع بلا أذن ونيتكلم بلا لسان؟", options: ["الهاتف", "التلفاز", "الكمبيوتر", "الجريدة"], a: 0 },
+            { q: "بيت بلا أبواب ولا نوافذ، فما هو؟", options: ["بيت الشعر", "البيض", "القبر", "الصندوق"], a: 1 },
+            { q: "ما هو الشيء الذي يبكي بلا أعيُن ويمشي بلا أرجل؟", options: ["السحاب", "النهار", "الوقت", "الماء"], a: 0 },
+            { q: "أنا أسود عندما أكون نظيفاً، وأبيض عندما أكون متسخاً؟", options: ["السبورة", "الفحم", "الثلج", "الليل"], a: 0 },
+            { q: "ما هو الشيء الذي يتحرك حولك دائماً ولكنك لا تراه؟", options: ["الكهرباء", "الهواء", "الصوت", "الزمن"], a: 1 },
+            { q: "شيء يمر عبر الزجاج ولا يكسره؟", options: ["الضوء", "الصوت", "الماء", "الرصاص"], a: 0 },
+            { q: "أنا أملك مدناً ولكن ليس لدي بيوت، وأملك جبالاً بلا أشجار؟", options: ["الخريطة", "الكوكب", "الرسمة", "الحلم"], a: 0 },
+            { q: "ما هو الشيء الذي إذا لمسته صرخ؟", options: ["الجرس", "الطفل", "الانذار", "المرآة"], a: 0 },
+            { q: "ما هو الشيء الذي إذا صببت عليه الماء لا يبتل؟", options: ["الظل", "الحديد", "الزجاج", "الخشب"], a: 0 },
+            { q: "أخت خالك وليست خالتك، فمن تكون؟", options: ["أمك", "جدتك", "عمتك", "أختك"], a: 0 },
+            { q: "ما هو الشيء الذي يستحيل كسره؟", options: ["المبتدأ", "الحديد", "الماس", "الماء"], a: 0 },
+            { q: "شيء إذا أطعمته كَبُر وإذا سقيته ماءً مات؟", options: ["النار", "النبات", "الشجر", "الطفل"], a: 0 },
+            { q: "ما هو الشيء الذي تقتله وتبكي عليه؟", options: ["البصل", "الوقت", "الخوف", "العدو"], a: 0 },
+            { q: "وله جناحين ولكنه لا يطير، وله عينين ولا يرى؟", options: ["الطيارة الميتة", "المركب", "الفراشة الميتة", "البوصلة"], a: 0 },
+            { q: "ما هو الشيء الذي يمشي ويقف وليس له أرجل؟", options: ["المعيار", "الساعة", "القطار", "القلم"], a: 1 },
+            { q: "كلما زاد نقص، فما هو؟", options: ["العمر", "المال", "الحفرة", "الطعام"], a: 0 },
+            { q: "ماهو الشيء الذي يمتلك العديد من المفاتيح ولكنه لا يفتح أي باب؟", options: ["البيانو", "الكمبيوتر", "الخزنة", "الألغاز"], a: 0 },
+            { q: "أين يقع البحر الذي لا يوجد به ماء؟", options: ["على الخريطة", "في الحلم", "في الصحراء", "في الفضاء"], a: 0 },
+            { q: "ما هو الذي يكون أمامك دائماً ولكنك لا تراه؟", options: ["المستقبل", "الهواء", "الماضي", "الظل"], a: 0 },
+            { q: "عائلة فيها 6 بنيات ولكل أخت أخ واحد، كم عدد العائلة؟", options: ["7", "9", "12", "13"], a: 1 }
+        ];
+
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let isMicOn = false;
+
+        function shuffleArray(array) {
+            let shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function hideAllScreens() {
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('mode-selection').classList.add('hidden');
+            document.getElementById('multiplayer-options').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+        }
+
+        function showMainMenu() {
+            hideAllScreens();
+            document.getElementById('main-menu').classList.remove('hidden');
+        }
+
+        function goToModeSelection() {
+            hideAllScreens();
+            document.getElementById('mode-selection').classList.remove('hidden');
+        }
+
+        function showMultiplayerOptions() {
+            hideAllScreens();
+            document.getElementById('multiplayer-options').classList.remove('hidden');
+        }
+
+        function startSinglePlayer() {
+            hideAllScreens();
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('room-info').classList.add('hidden');
+            document.getElementById('multiplayer-tools').classList.add('hidden');
+            initGame();
+        }
+
+        function createRoom() {
+            const roomCode = Math.floor(1000 + Math.random() * 9000);
+            enterRoom(roomCode);
+        }
+
+        function joinRoom() {
+            const input = document.getElementById('join-code-input').value;
+            if (input.trim() === "") {
+                alert("يرجى إدخال كود الغرفة أولاً!");
+                return;
+            }
+            enterRoom(input);
+        }
+
+        function enterRoom(code) {
+            hideAllScreens();
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('room-info').classList.remove('hidden');
+            document.getElementById('multiplayer-tools').classList.remove('hidden');
+            document.getElementById('display-room-code').innerText = code;
+            initGame();
+        }
+
+        function initGame() {
+            currentQuestions = shuffleArray(allQuestions);
+            currentQuestionIndex = 0;
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = currentQuestions[currentQuestionIndex];
+            document.getElementById('question-number').innerText = `السؤال ${currentQuestionIndex + 1} من ${currentQuestions.length}`;
+            document.getElementById('question-text').innerText = q.q;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = "";
+
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn-3d';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(index);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIndex) {
+            const q = currentQuestions[currentQuestionIndex];
+            if (selectedIndex === q.a) {
+                alert("إجابة صحيحة! 🎉");
+            } else {
+                alert("إجابة خاطئة! ❌ الإجابة الصحيحة هي: " + q.options[q.a]);
+            }
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex < currentQuestions.length) {
+                loadQuestion();
+            } else {
+                alert("مبروك! لقد أنهيت جميع الأسئلة.");
+                showMainMenu();
+            }
+        }
+
+        function toggleMic() {
+            const micBtn = document.getElementById('mic-toggle');
+            if (!isMicOn) {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    isMicOn = true;
+                    micBtn.innerText = "إيقاف المايك 🔴";
+                    micBtn.classList.add('active');
+                })
+                .catch(err => {
+                    alert("تعذر الوصول إلى المايك، يرجى إعطاء الإذن في المتصفح.");
+                });
+            } else {
+                isMicOn = false;
+                micBtn.innerText = "تشغيل المايك 🎤";
+                micBtn.classList.remove('active');
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (message !== "") {
+                const chatBox = document.getElementById('chat-box');
+                const msgDiv = document.createElement('div');
+                msgDiv.innerHTML = `<b>أنت:</b> ${message}`;
+                chatBox.appendChild(msgDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+                input.value = "";
+            }
+        }
+
+        function exitGame() {
+            if(confirm("هل تريد الخروج من اللعبة؟")) {
+                showMainMenu();
+            }
+        }
+    </script>
+</body>
+</html>
